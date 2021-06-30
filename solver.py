@@ -24,6 +24,9 @@ class Cell:
             return True
         return not self.row.has_value(value) and not self.column.has_value(value) and not self.block.has_value(value)
 
+    def is_empty(self):
+        return not isinstance(self.value, int)
+
 
 class Container:  # Every cell is part of 3 containers: 1 row, 1 column and 1 block
     def __init__(self):
@@ -90,26 +93,52 @@ class Grid:
                     f"You cannot change the value in ({row}, {col}) to {value}"
                     f", the value must be unique in the row, column and block")
 
-            print("\n", self)
+            print()
+            print(self)
             go = input("Do you wish to continue? (y/n)")
             while go.lower() not in ["y", "n"]:
                 go = input("Do you wish to continue? (y/n)")
 
-        self.complete_grid()
+        self.solve_sudoku(0, 0)
+        print(self)
 
-    def complete_grid(self):
-        pass
+    def solve_sudoku(self, row, col):
 
-    def recursion_manager(self, row, col, value):
-        pass
+        # print(f"row, col: {row}, {col}")
+
+        if self.is_finished():
+            return True
+
+        cell = self.grid[row][col]
+
+        next_row, next_col = self.next_index(row, col)
+
+        if not cell.is_empty():
+            if self.solve_sudoku(next_row, next_col):
+                return True
+        else:
+            for value in range(1, 10):
+                if cell.value_is_changeable(value):
+                    cell.value = value
+                    if self.solve_sudoku(next_row, next_col):
+                        return True
+                cell.value = "*"
+        return False
 
     def next_index(self, current_row, current_col):
-        next_col = current_col + 1 % 8
+        next_col = (current_col + 1) % 9
         next_row = current_row + 1 if next_col == 0 else current_row
-        return [next_row, next_col] if 0 <= next_row <= 8 else None
+        return [next_row, next_col]
+
+    def is_finished(self):
+        for r_index, r in enumerate(self.grid):
+            for c_index, c in enumerate(r):
+                if c.is_empty():
+                    return False
+        return True
 
     def __str__(self):
-        out = " ".join([str(i) for i in range(1, 10)]).center(20, " ") + "\n"
+        out = " " + " ".join([str(i) for i in range(1, 10)]) + "\n"
         col_count = 1
 
         for r_index, r in enumerate(self.grid):
